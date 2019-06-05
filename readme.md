@@ -2,4 +2,4 @@
 ## Audio Visualizer
 
 ### Reference Links
-https://github.com/asokawotulo/CG-Final-Project
+https://threejs.org/docs/#api/en/audio/AudioAnalyser

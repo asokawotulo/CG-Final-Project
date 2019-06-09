@@ -1,28 +1,69 @@
 <html>
 
 <head>
-    <title>My first three.js app</title>
+    <title>Audio</title>
     <style>
         body {
             margin: 0;
+            background-color: black;
+            color: white;
         }
 
         canvas {
             width: 100%;
             height: 100%;
         }
+
+        .btn {
+            cursor: pointer;
+            position: absolute;
+            margin: 0;
+            top: 0;
+            left: 50%;
+            transform:translateX(-50%);
+        }
     </style>
 </head>
 
 <body>
+
+    <h1 class="btn" onclick="play()">PLAY</h1>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r79/three.min.js"></script>
     <script>
+        // create scene
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+
+        // create an AudioListener and add it to the camera
+        var listener = new THREE.AudioListener();
+        camera.add(listener);
+
+        // create an Audio source
+        var sound = new THREE.Audio(listener);
+
+        // load a sound and set it as the Audio object's buffer
+        var audioLoader = new THREE.AudioLoader();
+        audioLoader.load('audio/summerdays.mp3', function (buffer) {
+            sound.setBuffer(buffer);
+            sound.setLoop(true);
+            sound.setVolume(1);
+        });
+
+        function play() {
+            sound.play();
+        }
+
+        // create an AudioAnalyser, passing in the sound and desired fftSize
+        var analyser = new THREE.AudioAnalyser(sound, 32);
+
+        // get the average frequency of the sound
+        var data = analyser.getAverageFrequency();
+        console.log(data);
 
     </script>
 </body>

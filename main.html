@@ -40,7 +40,7 @@
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        camera.position.z = 500;
+        camera.position.z = 700;
         controls.update();
 
         // create an AudioListener and add it to the camera
@@ -52,7 +52,7 @@
 
         // load a sound and set it as the Audio object's buffer
         var audioLoader = new THREE.AudioLoader();
-        audioLoader.load('audio/hope.mp3', function (buffer) {
+        audioLoader.load('audio/summerdays.mp3', function (buffer) {
             sound.setBuffer(buffer);
             sound.setLoop(true);
             sound.setVolume(1);
@@ -60,22 +60,45 @@
 
         // create an AudioAnalyser, passing in the sound and desired fftSize
         // fftSize Must be a power of 2 between 25 and 215, so one of: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, and 32768. Defaults to 2048.
-        var fftSize = 512;
+        var fftSize = 1024;
         var analyser = new THREE.AudioAnalyser(sound, fftSize);
 
-        var geometry = new THREE.TorusBufferGeometry(10, 0.05, 16, 100);
-        var material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        //group1
+        var geometry = new THREE.TorusBufferGeometry(10, 0.02, 16, 100);
+        var material = new THREE.MeshBasicMaterial({ color: 0xd97cff });
 
         var group = new THREE.Object3D();
         scene.add(group);
 
-        for (var i = 0; i < fftSize/2 ; i++) {
+        for (var i = 0; i < fftSize / 2; i++) {
             var mesh = new THREE.Mesh(geometry, material);
-            // if (i % 2 == 0) mesh.position.set(0, 0, i);
-            // else mesh.position.set(0, 0, -i);
-            mesh.position.set(0, 0, i);
+            if (i % 2 == 0) mesh.position.set(0, 0, i);
+            else mesh.position.set(0, 0, -i);
             group.add(mesh);
         }
+        
+        //group2
+        var geometry2 = new THREE.SphereGeometry(5, 32, 32);
+        var material2 = new THREE.MeshBasicMaterial({ color: 0xd97cff });
+
+        var group2 = new THREE.Object3D();
+        scene.add(group2);
+
+        var mesh2a = new THREE.Mesh(geometry2, material2);
+        mesh2a.position.set(350, 0, 0);
+        group2.add(mesh2a);
+
+        var mesh2b = new THREE.Mesh(geometry2, material2);
+        mesh2b.position.set(-350, 0, 0);
+        group2.add(mesh2b);
+
+        var mesh2c = new THREE.Mesh(geometry2, material2);
+        mesh2c.position.set(0, 350, 0);
+        group2.add(mesh2c);
+
+        var mesh2d = new THREE.Mesh(geometry2, material2);
+        mesh2d.position.set(0, -350, 0);
+        group2.add(mesh2d);
         
         function animate() {
             requestAnimationFrame(animate);
@@ -92,21 +115,34 @@
         function render() {
             // get the frequency of the sound
             var data = analyser.getFrequencyData();
+            var avgdata = analyser.getAverageFrequency();
 
             for (var i = 0; i < fftSize / 2; i++) {
                 if (data[i] == 0) {
-                    group['children'][i]['scale']['x'] = (1);
-                    group['children'][i]['scale']['y'] = (1);
-                    // group['children'][i]['scale']['z'] = (1);
+                    group.children[i].scale.x = 0.1;
+                    group.children[i].scale.y = 0.1;
                 }
                 else {
-                    group['children'][i]['scale']['x'] = (data[i] * 0.1);
-                    group['children'][i]['scale']['y'] = (data[i] * 0.1);
-                    // group['children'][i]['scale']['z'] = (data[i]);
+                    group.children[i].scale.x = data[i] * 0.1;
+                    group.children[i].scale.y = data[i] * 0.1;
+                }
+            }
+
+            for (var i=0; i<4; i++) {
+                if (avgdata == 0) {
+                    group2.children[i].scale.x = 0.1;
+                    group2.children[i].scale.y = 0.1;
+                    group2.children[i].scale.z = 0.1;
+                }
+                else {
+                    group2.children[i].scale.x = avgdata * 0.1;
+                    group2.children[i].scale.y = avgdata * 0.1;
+                    group2.children[i].scale.z = avgdata * 0.1;
                 }
             }
 
             requestAnimationFrame(render);
+            controls.update();
             renderer.render(scene, camera);
 
             // console.log(data);

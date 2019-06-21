@@ -18,7 +18,7 @@
             position: absolute;
             margin: 0;
             top: 0;
-            left: 50%;
+            left: 10%;
             transform:translateX(-50%);
         }
     </style>
@@ -28,18 +28,20 @@
 
     <h1 class="btn" onclick="play()">PLAY</h1>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r79/three.min.js"></script>
+    <script src="/node_modules/three/build/three.min.js"></script>
+    <script src="/node_modules/three/examples/js/controls/OrbitControls.js"></script>
     <script>
+
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
         // create scene
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.x = 500;
-        camera.position.z = 400;
-
-        var renderer = new THREE.WebGLRenderer();
-        scene.add(camera);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);
+        camera.position.z = 500;
+        controls.update();
 
         // create an AudioListener and add it to the camera
         var listener = new THREE.AudioListener();
@@ -50,7 +52,7 @@
 
         // load a sound and set it as the Audio object's buffer
         var audioLoader = new THREE.AudioLoader();
-        audioLoader.load('audio/summerdays.mp3', function (buffer) {
+        audioLoader.load('audio/hope.mp3', function (buffer) {
             sound.setBuffer(buffer);
             sound.setLoop(true);
             sound.setVolume(1);
@@ -58,22 +60,26 @@
 
         // create an AudioAnalyser, passing in the sound and desired fftSize
         // fftSize Must be a power of 2 between 25 and 215, so one of: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, and 32768. Defaults to 2048.
-        var fftSize = 2048;
+        var fftSize = 512;
         var analyser = new THREE.AudioAnalyser(sound, fftSize);
 
-        var geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-        var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        var cubes = new THREE.Object3D();
-        scene.add(cubes);
+        var geometry = new THREE.TorusBufferGeometry(10, 0.05, 16, 100);
+        var material = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        for (var i = 0; i < fftSize/2; i++) {
-            var cube = new THREE.Mesh(geometry, material);
-            cube.position.set(i, 0, 0);
-            cubes.add(cube);
+        var group = new THREE.Object3D();
+        scene.add(group);
+
+        for (var i = 0; i < fftSize/2 ; i++) {
+            var mesh = new THREE.Mesh(geometry, material);
+            // if (i % 2 == 0) mesh.position.set(0, 0, i);
+            // else mesh.position.set(0, 0, -i);
+            mesh.position.set(0, 0, i);
+            group.add(mesh);
         }
-
+        
         function animate() {
             requestAnimationFrame(animate);
+            controls.update();
             renderer.render(scene, camera);
         }
         animate();
@@ -88,20 +94,23 @@
             var data = analyser.getFrequencyData();
 
             for (var i = 0; i < fftSize / 2; i++) {
-                if (data[i] == 0)
-                cubes['children'][i]['scale']['y'] = (1);
-                else cubes['children'][i]['scale']['y'] = (data[i]);
+                if (data[i] == 0) {
+                    group['children'][i]['scale']['x'] = (1);
+                    group['children'][i]['scale']['y'] = (1);
+                    // group['children'][i]['scale']['z'] = (1);
+                }
+                else {
+                    group['children'][i]['scale']['x'] = (data[i] * 0.1);
+                    group['children'][i]['scale']['y'] = (data[i] * 0.1);
+                    // group['children'][i]['scale']['z'] = (data[i]);
+                }
             }
 
             requestAnimationFrame(render);
             renderer.render(scene, camera);
 
-            console.log(data);
+            // console.log(data);
         }
-
-
-
-
 
         function max(params) {
             return Math.max.apply(Math, params);

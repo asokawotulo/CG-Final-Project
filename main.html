@@ -5,7 +5,7 @@
     <style>
         body {
             margin: 0;
-            color: white;
+            color: black;
         }
 
         canvas {
@@ -38,9 +38,11 @@
 
         // create scene
         var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.background = new THREE.Color(0xffffff);
+        var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        camera.position.z = 700;
+        camera.position.z = 600;
+        camera.updateProjectionMatrix();
         controls.update();
 
         // create an AudioListener and add it to the camera
@@ -52,7 +54,7 @@
 
         // load a sound and set it as the Audio object's buffer
         var audioLoader = new THREE.AudioLoader();
-        audioLoader.load('audio/wait.mp3', function (buffer) {
+        audioLoader.load('audio/hope.mp3', function (buffer) {
             sound.setBuffer(buffer);
             sound.setLoop(true);
             sound.setVolume(1);
@@ -63,9 +65,9 @@
         var fftSize = 1024;
         var analyser = new THREE.AudioAnalyser(sound, fftSize);
 
-        //group1
-        var geometry = new THREE.TorusBufferGeometry(10, 0.04, 16, 100);
-        var material = new THREE.MeshBasicMaterial({ color: 0xd97cff });
+        //group1 circle spectrum
+        var geometry = new THREE.TorusBufferGeometry(10, 0.03, 16, 100);
+        var material = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
         var group = new THREE.Object3D();
         scene.add(group);
@@ -77,9 +79,9 @@
             group.add(mesh);
         }
         
-        //group2
+        //group2 outer diamond
         var geometry2 = new THREE.OctahedronGeometry(20, 0);
-        var material2 = new THREE.MeshBasicMaterial({ color: 0xd97cff });
+        var material2 = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
         var group2 = new THREE.Object3D();
         scene.add(group2);
@@ -93,9 +95,9 @@
         group2.children[2].position.set(0, 450, 0);
         group2.children[3].position.set(0, -450, 0);
 
-        //group3
+        //group3 inner diamond
         var geometry3 = new THREE.OctahedronGeometry(10, 0);
-        var material3 = new THREE.MeshBasicMaterial({ color: 0xd97cff });
+        var material3 = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
         var group3 = new THREE.Object3D();
         scene.add(group3);
@@ -109,6 +111,41 @@
         group3.children[2].position.set(0, 350, 0);
         group3.children[3].position.set(0, -350, 0);
 
+        //group 4 line background
+        var group4 = new THREE.Object3D();
+        scene.add(group4);
+
+        var parameters = [[3.0, 0xaaaaaa, 0.25], [3.5, 0xaaaaaa, 0.5], [4.0, 0xaaaaaa, 0.75]];
+        var geometry4 = createGeometry();
+        for (var i = 0; i < parameters.length; ++i) {
+            var p = parameters[i];
+            var material4 = new THREE.LineBasicMaterial({ color: p[1], opacity: p[2] });
+            var line = new THREE.LineSegments(geometry4, material4);
+            line.scale.x = line.scale.y = line.scale.z = p[0];
+            line.userData.originalScale = p[0];
+            line.rotation.y = Math.random() * Math.PI;
+            line.updateMatrix();
+            group4.add(line);
+        }
+
+        function createGeometry() {
+            var geometry = new THREE.BufferGeometry();
+            var vertices = [];
+            var vertex = new THREE.Vector3();
+            for (var i = 0; i < 1500; i++) {
+                vertex.x = Math.random() * 2 - 1;
+                vertex.y = Math.random() * 2 - 1;
+                vertex.z = Math.random() * 2 - 1;
+                vertex.normalize();
+                vertex.multiplyScalar(200);
+                vertices.push(vertex.x, vertex.y, vertex.z);
+                vertex.multiplyScalar(Math.random() * 0.09 + 1);
+                vertices.push(vertex.x, vertex.y, vertex.z);
+            }
+            geometry.addAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            return geometry;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -116,19 +153,14 @@
         }
         animate();
 
-        function play() {
-            sound.play();
-            render();
-        }
-
         function render() {
             // get the frequency of the sound
             var data = analyser.getFrequencyData();
             var avgdata = analyser.getAverageFrequency();
 
             for (var i = 0; i < fftSize / 2; i++) {
-                group.children[i].scale.x = (data[i] * 0.1) + 0.1;
-                group.children[i].scale.y = (data[i] * 0.1) + 0.1;
+                group.children[i].scale.x = (data[i] * 0.1) + 0.001;
+                group.children[i].scale.y = (data[i] * 0.1) + 0.001;
             }
             
             var lowerHalfArray = data.slice(0, (data.length / 2) - 1);
@@ -144,12 +176,19 @@
 
             var speed3 = lowerAvg * -0.0002;
             group3.rotateZ(speed3);
+
+            group4.rotateY(avgdata * 0.0004);
         
             requestAnimationFrame(render);
             controls.update();
             renderer.render(scene, camera);
 
             // console.log(data);
+        }
+
+        function play() {
+            sound.play();
+            render();
         }
 
         function max(params) {

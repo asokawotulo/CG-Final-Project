@@ -39,9 +39,9 @@
         // create scene
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
-        var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 2000);
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        camera.position.z = 600;
+        camera.position.set(0, 0, 600);
         camera.updateProjectionMatrix();
         controls.update();
 
@@ -54,11 +54,19 @@
 
         // load a sound and set it as the Audio object's buffer
         var audioLoader = new THREE.AudioLoader();
-        audioLoader.load('audio/hope.mp3', function (buffer) {
+        audioLoader.load('audio/hope.mp3', 
+        function(buffer) {
             sound.setBuffer(buffer);
             sound.setLoop(true);
             sound.setVolume(1);
-        });
+        },
+        function(xhr) {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        function(err) {
+            console.log('Error');
+        }
+        );
 
         // create an AudioAnalyser, passing in the sound and desired fftSize
         // fftSize Must be a power of 2 between 25 and 215, so one of: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, and 32768. Defaults to 2048.
@@ -90,13 +98,13 @@
             var mesh2 = new THREE.Mesh(geometry2, material2);
             group2.add(mesh2);
         }
-        group2.children[0].position.set(450, 0, 0);
-        group2.children[1].position.set(-450, 0, 0);
-        group2.children[2].position.set(0, 450, 0);
-        group2.children[3].position.set(0, -450, 0);
+        group2.children[0].position.set(500, 0, 0);
+        group2.children[1].position.set(-500, 0, 0);
+        group2.children[2].position.set(0, 500, 0);
+        group2.children[3].position.set(0, -500, 0);
 
         //group3 inner diamond
-        var geometry3 = new THREE.OctahedronGeometry(10, 0);
+        var geometry3 = new THREE.OctahedronGeometry(12, 0);
         var material3 = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
         var group3 = new THREE.Object3D();
@@ -106,10 +114,10 @@
         var mesh3 = new THREE.Mesh(geometry3, material3);
         group3.add(mesh3);
         }
-        group3.children[0].position.set(350, 0, 0);
-        group3.children[1].position.set(-350, 0, 0);
-        group3.children[2].position.set(0, 350, 0);
-        group3.children[3].position.set(0, -350, 0);
+        group3.children[0].position.set(250, 0, 0);
+        group3.children[1].position.set(-250, 0, 0);
+        group3.children[2].position.set(0, 250, 0);
+        group3.children[3].position.set(0, -250, 0);
 
         //group 4 line background
         var group4 = new THREE.Object3D();
@@ -152,7 +160,7 @@
             renderer.render(scene, camera);
         }
         animate();
-
+        
         function render() {
             // get the frequency of the sound
             var data = analyser.getFrequencyData();
@@ -173,17 +181,38 @@
 
             var speed2 = upperAvg * 0.002;
             group2.rotateZ(speed2);
+            var range2 = upperAvg * 6 + 500;
+            group2.children[0].position.set(range2, 0, 0);
+            group2.children[1].position.set(-range2, 0, 0);
+            group2.children[2].position.set(0, range2, 0);
+            group2.children[3].position.set(0, -range2, 0);
 
             var speed3 = lowerAvg * -0.0002;
             group3.rotateZ(speed3);
+            var range3 = lowerAvg * 1.5 + 250;
+            group3.children[0].position.set(range3, 0, 0);
+            group3.children[1].position.set(-range3, 0, 0);
+            group3.children[2].position.set(0, range3, 0);
+            group3.children[3].position.set(0, -range3, 0);
 
             group4.rotateY(avgdata * 0.0004);
-        
+
+            document.body.onkeydown = function() {
+                camera.strength = 50;
+                camera.damper = 5;
+            }
+
+            if (camera.strength > 0) {
+                var rand1 = Math.random() * 2 * camera.strength - camera.strength;
+                var rand2 = Math.random() * 2 * camera.strength - camera.strength;
+                camera.position.x += rand1;
+                camera.position.y += rand2;
+                camera.strength -= camera.damper;
+            }
+
             requestAnimationFrame(render);
             controls.update();
             renderer.render(scene, camera);
-
-            // console.log(data);
         }
 
         function play() {

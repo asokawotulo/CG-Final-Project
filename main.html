@@ -18,7 +18,7 @@
             position: absolute;
             margin: 0;
             top: 0;
-            left: 10%;
+            left: 50%;
             transform:translateX(-50%);
         }
     </style>
@@ -27,6 +27,8 @@
 <body>
 
     <h1 class="btn" onclick="play()">PLAY</h1>
+    <!-- <label>input audio<input type="file" id="file" accept="audio/*"></label>
+    <audio id="audio" controls></audio> -->
 
     <script src="/node_modules/three/build/three.min.js"></script>
     <script src="/node_modules/three/examples/js/controls/OrbitControls.js"></script>
@@ -43,7 +45,7 @@
         camera.position.set(0, 0, 600);
         camera.updateProjectionMatrix();
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.minDistance = 300;
+        controls.minDistance = 400;
         controls.maxDistance = 900;
         controls.update();
 
@@ -200,15 +202,10 @@
 
             group4.rotateY(avgdata * 0.0004);
 
-            document.body.onkeydown = function() {
-                camera.strength = 20;
-                camera.damper = 5;
-            }
+            console.log(upperAvg, ' -- ',avgdata , ' -- ', lowerAvg);
 
-            console.log(lowerAvg, ' -- ', avgdata, ' -- ', upperAvg);
-
-            if (lowerAvg >= 0 || upperAvg >= 0) {
-                camera.strength = 12;
+            if (lowerAvg / upperAvg < avgdata) {
+                camera.strength = 15;
                 camera.damper = 3;
             }
 

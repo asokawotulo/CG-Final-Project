@@ -12,23 +12,29 @@
             width: 100%;
             height: 100%;
         }
-
-        .btn {
-            cursor: pointer;
+        #audio {
             position: absolute;
-            margin: 0;
-            top: 0;
+            bottom: 2%;
             left: 50%;
-            transform:translateX(-50%);
+            transform: translateX(-50%);
+            width: 50%;
+            height: 5%;
+            outline: none;
+        }
+        .filelabel {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
     </style>
 </head>
 
 <body>
 
-    <h1 class="btn" onclick="play()">PLAY</h1>
-    <!-- <label>input audio<input type="file" id="file" accept="audio/*"></label>
-    <audio id="audio" controls></audio> -->
+    <label for="thefile" class="filelabel">Upload Audio File
+        <input type="file" id="file" accept="audio/*" />
+    </label>
+    <audio id="audio" controls></audio>
 
     <script src="/node_modules/three/build/three.min.js"></script>
     <script src="/node_modules/three/examples/js/controls/OrbitControls.js"></script>
@@ -45,37 +51,51 @@
         camera.position.set(0, 0, 600);
         camera.updateProjectionMatrix();
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.minDistance = 400;
+        controls.minDistance = 700;
         controls.maxDistance = 900;
         controls.update();
 
-        // create an AudioListener and add it to the camera
-        var listener = new THREE.AudioListener();
-        camera.add(listener);
+        // var listener = new THREE.AudioListener();
+        // camera.add(listener);
 
-        // create an Audio source
-        var sound = new THREE.Audio(listener);
+        // navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSuccess);
 
-        // load a sound and set it as the Audio object's buffer
-        var audioLoader = new THREE.AudioLoader();
-        audioLoader.load('audio/senorita.mp3', 
-        function(buffer) {
-            sound.setBuffer(buffer);
-            sound.setLoop(true);
-            sound.setVolume(1);
-        },
-        function(xhr) {
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-        },
-        function(err) {
-            console.log('Error');
+        // function handleSuccess(stream) {
+        //     var audio = new THREE.Audio(listener);
+
+        //     var context = listener.context;
+        //     var source = context.createMediaStreamSource(stream);
+        //     audio.setNodeSource(source);
+        // }
+
+        // var file = document.getElementById("file");
+        // var audio = document.getElementById("audio");
+
+        document.onload = function (e) {
+            console.log(e);
+            audio.play();
         }
-        );
+        file.onchange = function () {
+            var files = this.files;
 
-        // create an AudioAnalyser, passing in the sound and desired fftSize
-        // fftSize Must be a power of 2 between 25 and 215, so one of: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, and 32768. Defaults to 2048.
-        var fftSize = 1024;
-        var analyser = new THREE.AudioAnalyser(sound, fftSize);
+            audio.src = URL.createObjectURL(files[0]);
+            audio.load();
+            audio.play();
+            render();
+        }
+
+        var context = new AudioContext();
+        var src = context.createMediaElementSource(audio);
+        var analyser = context.createAnalyser();
+        src.connect(analyser);
+        analyser.connect(context.destination);
+
+        var fftSize = 1024
+        analyser.fftSize = fftSize;
+        var bufferLength = analyser.frequencyBinCount;
+        var data = new Uint8Array(bufferLength);
+
+        //------------------------------------------------------GEOMETRY--------------------------------------------------------
 
         //group1 circle spectrum
         var geometry = new THREE.TorusBufferGeometry(10, 0.03, 16, 100);
@@ -127,7 +147,7 @@
         var group4 = new THREE.Object3D();
         scene.add(group4);
 
-        var parameters = [[3.0, 0xaaaaaa, 0.25], [3.5, 0xaaaaaa, 0.5], [4.0, 0xaaaaaa, 0.75]];
+        var parameters = [[3.5, 0xaaaaaa, 0.25], [4.0, 0xaaaaaa, 0.5], [4.5, 0xaaaaaa, 0.75]];
         var geometry4 = createGeometry();
         for (var i = 0; i < parameters.length; ++i) {
             var p = parameters[i];
@@ -159,6 +179,8 @@
             return geometry;
         }
 
+        //--------------------------------------------------------------------------------------------------------------------
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -168,8 +190,8 @@
         
         function render() {
             // get the frequency of the sound
-            var data = analyser.getFrequencyData();
-            var avgdata = analyser.getAverageFrequency();
+            analyser.getByteFrequencyData(data);
+            var avgdata = avg(data);
 
             for (var i = 0; i < fftSize / 2; i++) {
                 group.children[i].scale.x = (data[i] * 0.1) + 0.001;
@@ -202,8 +224,6 @@
 
             group4.rotateY(avgdata * 0.0004);
 
-            console.log(upperAvg, ' -- ',avgdata , ' -- ', lowerAvg);
-
             if (lowerAvg / upperAvg < avgdata) {
                 camera.strength = 15;
                 camera.damper = 3;
@@ -223,11 +243,6 @@
             requestAnimationFrame(render);
             controls.update();
             renderer.render(scene, camera);
-        }
-
-        function play() {
-            sound.play();
-            render();
         }
 
         function max(params) {
